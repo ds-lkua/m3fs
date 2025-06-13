@@ -41,7 +41,7 @@ var (
 // ConnectionArgs returns a connetion argument to test database.
 func ConnectionArgs() *model.ConnectionArgs {
 	connArg := &model.ConnectionArgs{
-		Host:     "postgres",
+		Host:     "127.0.0.1",
 		Port:     5432,
 		User:     "postgres",
 		Password: "password",
