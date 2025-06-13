@@ -42,7 +42,7 @@ var (
 func ConnectionArgs() *model.ConnectionArgs {
 	connArg := &model.ConnectionArgs{
 		Host:     "127.0.0.1",
-		Port:     15632,
+		Port:     5432,
 		User:     "postgres",
 		Password: "password",
 		DBName:   "postgres",
