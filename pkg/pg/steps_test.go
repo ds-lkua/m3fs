@@ -88,6 +88,8 @@ func (s *runContainerStepSuite) testRunContainerStep(
 		Envs:        env,
 		Volumes:     vols,
 	}).Return("", nil)
+	s.MockDocker.On("Exec", "3fs-postgres", "pg_isready",
+		[]string{"-U", s.Cfg.Services.Pg.Username}).Return("", nil)
 
 	s.NoError(s.step.Execute(s.Ctx()))
 

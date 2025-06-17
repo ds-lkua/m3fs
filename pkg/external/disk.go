@@ -22,7 +22,8 @@ import (
 	"github.com/open3fs/m3fs/pkg/log"
 )
 
-// BlockDevice represents a block device on the system, including its name, label, size, serial number, and any child devices.
+// BlockDevice represents a block device on the system, including its
+// name, label, size, serial number, and any child devices.
 type BlockDevice struct {
 	Name     string        `json:"name"`
 	Label    string        `json:"label"`
@@ -51,8 +52,8 @@ func (de *diskExternal) GetNvmeDisks() ([]string, error) {
 	return nil, nil
 }
 
-func (fe *diskExternal) ListBlockDevices(ctx context.Context) ([]BlockDevice, error) {
-	out, err := fe.run(ctx, "lsblk", "-J", "-o", "NAME,LABEL,SIZE,SERIAL", "-b")
+func (de *diskExternal) ListBlockDevices(ctx context.Context) ([]BlockDevice, error) {
+	out, err := de.run(ctx, "lsblk", "-J", "-o", "NAME,LABEL,SIZE,SERIAL", "-b")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

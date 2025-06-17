@@ -143,5 +143,9 @@ func (t *InitUserAndChainTask) Init(r *task.Runtime, logger log.Interface) {
 			Nodes:   []config.Node{nodes[0]},
 			NewStep: func() task.Step { return new(initUserAndChainStep) },
 		},
+		{
+			Nodes:   []config.Node{nodes[0]},
+			NewStep: func() task.Step { return new(createChainAndTargetModelStep) },
+		},
 	})
 }

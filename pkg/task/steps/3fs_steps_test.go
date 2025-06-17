@@ -272,7 +272,7 @@ func (s *run3FSContainerStepSuite) testRunContainer(
 		Model:    mgmtService.Model,
 		Name:     s.Runtime.Services.Mgmtd.ContainerName,
 		NodeID:   s.Runtime.LoadNodesMap()[s.step.Node.Name].ID,
-		FsNodeID: "1",
+		FsNodeID: "0",
 	}
 	s.Equal(mgmtServiceExp, mgmtService)
 
