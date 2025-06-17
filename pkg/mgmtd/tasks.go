@@ -84,7 +84,7 @@ func (t *CreateMgmtdServiceTask) Init(r *task.Runtime, logger log.Interface) {
 					ModelObjFunc: func(s *task.BaseStep) any {
 						fsNodeID, _ := s.Runtime.LoadInt(
 							steps.GetNodeIDKey(ServiceName, s.Node.Name))
-						return &model.MetaService{
+						return &model.MgmtService{
 							Name:     r.Services.Mgmtd.ContainerName,
 							NodeID:   s.GetNodeModelID(),
 							FsNodeID: fmt.Sprintf("%d", fsNodeID),

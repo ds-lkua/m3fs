@@ -47,11 +47,11 @@ func (s *createDisksStep) Execute(ctx context.Context) error {
 	}
 	s.storageServiceID = storageService.ID
 
-	devies, err := s.Em.Disk.ListBlockDevices(ctx)
+	devices, err := s.Em.Disk.ListBlockDevices(ctx)
 	if err != nil {
 		return errors.Trace(err)
 	}
-	if err = s.createFsDisks(devies); err != nil {
+	if err = s.createFsDisks(devices); err != nil {
 		return errors.Trace(err)
 	}
 
@@ -71,7 +71,10 @@ func (s *createDisksStep) parseDiskIndex(label string) (int, error) {
 func (s *createDisksStep) createFsDisks(devices []external.BlockDevice) error {
 	for _, device := range devices {
 		if len(device.Children) > 0 {
-			return errors.Trace(s.createFsDisks(device.Children))
+			if err := errors.Trace(s.createFsDisks(device.Children)); err != nil {
+				return errors.Trace(err)
+			}
+			continue
 		}
 		if device.Label == "" || !strings.HasPrefix(device.Label, "3fs-data-") {
 			continue

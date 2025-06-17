@@ -169,13 +169,17 @@ func (t *CreateStorageServiceTask) Init(r *task.Runtime, logger log.Interface) {
 					ModelObjFunc: func(s *task.BaseStep) any {
 						fsNodeID, _ := s.Runtime.LoadInt(
 							steps.GetNodeIDKey(ServiceName, s.Node.Name))
-						return &model.MetaService{
+						return &model.StorageService{
 							Name:     r.Services.Storage.ContainerName,
 							NodeID:   s.GetNodeModelID(),
 							FsNodeID: fmt.Sprintf("%d", fsNodeID),
 						}
 					},
 				}),
+		},
+		{
+			Nodes:   nodes,
+			NewStep: func() task.Step { return new(createDisksStep) },
 		},
 	})
 }
