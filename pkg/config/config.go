@@ -71,15 +71,16 @@ type NodeGroup struct {
 
 // Pg is the pg db config definition
 type Pg struct {
-	ContainerName    string   `yaml:"containerName"`
-	Nodes            []string `yaml:"nodes"`
-	NodeGroups       []string `yaml:"nodeGroups"`
-	Port             int      `yaml:"port"`
-	Username         string   `yaml:"username,omitempty"`
-	Password         string   `yaml:"password,omitempty"`
-	Database         string   `yaml:"database,omitempty"`
-	ReadOnlyUsername string   `yaml:"readOnlyUsername,omitempty"`
-	ReadOnlyPassword string   `yaml:"readOnlyPassword,omitempty"`
+	ContainerName    string        `yaml:"containerName"`
+	Nodes            []string      `yaml:"nodes"`
+	NodeGroups       []string      `yaml:"nodeGroups"`
+	Port             int           `yaml:"port"`
+	Username         string        `yaml:"username,omitempty"`
+	Password         string        `yaml:"password,omitempty"`
+	Database         string        `yaml:"database,omitempty"`
+	ReadOnlyUsername string        `yaml:"readOnlyUsername,omitempty"`
+	ReadOnlyPassword string        `yaml:"readOnlyPassword,omitempty"`
+	WaitReadyTimeout time.Duration `yaml:"waitReadyTimeout,omitempty"`
 }
 
 // Fdb is the fdb config definition
@@ -542,6 +543,7 @@ func NewConfigWithDefaults() *Config {
 				Database:         "open3fs",
 				ReadOnlyUsername: "postgres_readonly",
 				ReadOnlyPassword: "pgpassword_readonly",
+				WaitReadyTimeout: 30 * time.Second,
 			},
 			Fdb: Fdb{
 				ContainerName:      "3fs-fdb",
