@@ -214,15 +214,19 @@ func (s *initResourceModelsStep) Execute(ctx context.Context) error {
 	}
 
 	nodes := make([]*model.Node, 0, len(s.Runtime.Nodes))
+	nodesMap := make(map[string]*model.Node, len(s.Runtime.Nodes))
 	for _, node := range s.Runtime.Nodes {
-		nodes = append(nodes, &model.Node{
+		node := &model.Node{
 			Name: node.Name,
 			Host: node.Host,
-		})
+		}
+		nodes = append(nodes, node)
+		nodesMap[node.Name] = node
 	}
 	if err = db.Model(new(model.Node)).CreateInBatches(nodes, len(nodes)).Error; err != nil {
 		return errors.Annotatef(err, "create nodes")
 	}
+	s.Runtime.Store(task.RuntimeNodesMapKey, nodesMap)
 
 	for _, nodeName := range cfg.Services.Pg.Nodes {
 		var node model.Node

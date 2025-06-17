@@ -24,6 +24,7 @@ import (
 	"github.com/open3fs/m3fs/pkg/config"
 	"github.com/open3fs/m3fs/pkg/external"
 	"github.com/open3fs/m3fs/pkg/log"
+	"github.com/open3fs/m3fs/pkg/pg/model"
 	"github.com/open3fs/m3fs/pkg/task"
 	"github.com/open3fs/m3fs/pkg/task/steps"
 )
@@ -164,6 +165,15 @@ func (t *CreateStorageServiceTask) Init(r *task.Runtime, logger log.Interface) {
 							Source: path.Join(workDir, "3fsdata"),
 							Target: "/mnt/3fsdata",
 						},
+					},
+					ModelObjFunc: func(s *task.BaseStep) any {
+						fsNodeID, _ := s.Runtime.LoadInt(
+							steps.GetNodeIDKey(ServiceName, s.Node.Name))
+						return &model.MetaService{
+							Name:     r.Services.Storage.ContainerName,
+							NodeID:   s.GetNodeModelID(),
+							FsNodeID: fmt.Sprintf("%d", fsNodeID),
+						}
 					},
 				}),
 		},

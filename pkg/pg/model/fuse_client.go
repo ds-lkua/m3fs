@@ -16,9 +16,10 @@ package model
 
 import "gorm.io/gorm"
 
-// MonService is the model of 3fs monitoring service.
-type MonService struct {
+// FuseClient is the model of 3fs fuse client.
+type FuseClient struct {
 	gorm.Model
-	Name   string
-	NodeID uint
+	Name           string
+	NodeID         uint
+	HostMountpoint string
 }
