@@ -253,48 +253,7 @@ create-target --node-id 10003 --disk-index 0 --target-id 101000300102 --chain-id
 				ChainTableFile: "output/generated_chain_table.csv",
 			})),
 		}, {
-			OperationType: model.ChangePlanStepOpType.CreateNewChainAndTargetModel,
-			OperationData: string(s.JsonMarshal(createTargetModelOpData{
-				Targets: []fsTarget{
-					{
-						ID:        101000100101,
-						NodeID:    10001,
-						DiskIndex: 0,
-						ChainID:   900100001,
-					},
-					{
-						ID:        101000200101,
-						NodeID:    10002,
-						DiskIndex: 0,
-						ChainID:   900100001,
-					},
-					{
-						ID:        101000100102,
-						NodeID:    10001,
-						DiskIndex: 0,
-						ChainID:   900100002,
-					},
-					{
-						ID:        101000300101,
-						NodeID:    10003,
-						DiskIndex: 0,
-						ChainID:   900100002,
-					},
-					{
-						ID:        101000200102,
-						NodeID:    10002,
-						DiskIndex: 0,
-						ChainID:   900100003,
-					},
-					{
-						ID:        101000300102,
-						NodeID:    10003,
-						DiskIndex: 0,
-						ChainID:   900100003,
-					},
-				},
-				ChainIDs: []chainID{900100001, 900100002, 900100003},
-			})),
+			OperationType: model.ChangePlanStepOpType.SyncChainAndTargetModel,
 		},
 	}
 }
@@ -332,29 +291,6 @@ func (s *prepareChangePlanStepSuite) TestRunGenerateStep() {
 	s.MockDocker.AssertExpectations(s.T())
 }
 
-func (s *prepareChangePlanStepSuite) TestWithProcessingPlan() {
-	changePlan := &model.ChangePlan{
-		Type: model.ChangePlanTypeAddStorNodes,
-	}
-	s.NoError(s.NewDB().Model(new(model.ChangePlan)).Create(changePlan).Error)
-	s.NoError(s.NewDB().Model(new(model.ChangePlan)).First(changePlan).Error)
-	steps := []*model.ChangePlanStep{
-		{
-			OperationType: model.ChangePlanStepOpType.CreateStorService,
-			ChangePlanID:  changePlan.ID,
-		},
-	}
-	s.NoError(s.NewDB().Model(new(model.ChangePlanStep)).Create(steps).Error)
-	s.NoError(s.NewDB().Model(new(model.ChangePlanStep)).Find(&steps).Error)
-
-	s.NoError(s.step.Execute(s.Ctx()))
-
-	cacheChangePlan := s.Runtime.LoadChangePlan()
-	s.Equal(changePlan, cacheChangePlan)
-	cacheSteps := s.Runtime.LoadChangePlanSteps()
-	s.Equal(steps, cacheSteps)
-}
-
 func (s *prepareChangePlanStepSuite) TestRunGenerateStepFailed() {
 	strCfg := s.Runtime.Cfg.Services.Storage
 	s.MockDocker.On("Exec", s.Cfg.Services.Mgmtd.ContainerName, "bash",
@@ -376,15 +312,6 @@ func (s *prepareChangePlanStepSuite) TestRunGenerateStepFailed() {
 	s.Zero(count)
 
 	s.MockDocker.AssertExpectations(s.T())
-}
-
-func (s *prepareChangePlanStepSuite) TestWithHasOtherTypeChangePlan() {
-	changePlan := model.ChangePlan{
-		Type: model.ChangePlanTypeAddFuseClients,
-	}
-	s.NoError(s.NewDB().Model(new(model.ChangePlan)).Create(&changePlan).Error)
-
-	s.Error(s.step.Execute(s.Ctx()), "there are unfinished %s operation", changePlan.Type)
 }
 
 func TestRunChangePlanSuite(t *testing.T) {
@@ -507,24 +434,7 @@ func (s *runChangePlanSuite) initSteps() (*model.ChangePlan, []*model.ChangePlan
 				ChainTableFile: "output/generated_chain_table.csv",
 			})),
 		}, {
-			OperationType: model.ChangePlanStepOpType.CreateNewChainAndTargetModel,
-			OperationData: string(s.JsonMarshal(createTargetModelOpData{
-				Targets: []fsTarget{
-					{
-						ID:        101000100101,
-						NodeID:    10001,
-						DiskIndex: 0,
-						ChainID:   900100001,
-					},
-					{
-						ID:        101000200101,
-						NodeID:    10002,
-						DiskIndex: 0,
-						ChainID:   900100001,
-					},
-				},
-				ChainIDs: []chainID{900100001},
-			})),
+			OperationType: model.ChangePlanStepOpType.SyncChainAndTargetModel,
 		},
 	}
 
@@ -575,32 +485,49 @@ func (s *runChangePlanSuite) TestRun() {
 	s.mockAdminCli("upload-chains output/generated_chains.csv", "")
 	s.mockAdminCli("upload-chain-table 1 output/generated_chain_table.csv", "")
 
+	existsChain := &model.Chain{
+		Name: "900100015",
+	}
+	db := s.NewDB()
+	s.NoError(db.Model(existsChain).Create(existsChain).Error)
+	existsTarget := &model.Target{
+		Name:    "101000200102",
+		ChainID: existsChain.ID,
+	}
+	s.NoError(db.Model(existsTarget).Create(existsTarget).Error)
+	s.mockAdminCli("list-targets",
+		`TargetId      ChainId    Role  PublicState  LocalState  NodeId  DiskIndex  UsedSize
+101000200102  900100016  HEAD  SERVING      UPTODATE    10001   0          0
+101000300101  900100016  TAIL  SERVING      UPTODATE    10002   0          0
+`)
+
 	s.NoError(s.step.Execute(s.Ctx()))
 
 	var chainsDB []model.Chain
-	db := s.NewDB()
-	s.NoError(db.Model(new(model.Chain)).Find(&chainsDB).Error)
-	s.Len(chainsDB, 1)
+	s.NoError(db.Model(new(model.Chain)).Order("id ASC").Find(&chainsDB).Error)
+	s.Len(chainsDB, 2)
+	existsChain.Model = chainsDB[0].Model
+	s.Equal(*existsChain, chainsDB[0])
 	chainExp := model.Chain{
-		Model: chainsDB[0].Model,
-		Name:  chainsDB[0].Name,
+		Model: chainsDB[1].Model,
+		Name:  chainsDB[1].Name,
 	}
-	s.Equal(chainExp, chainsDB[0])
+	s.Equal(chainExp, chainsDB[1])
 
 	var targetsDB []model.Target
-	s.NoError(db.Model(new(model.Target)).Find(&targetsDB).Error)
+	s.NoError(db.Model(new(model.Target)).Order("id ASC").Find(&targetsDB).Error)
 	s.Len(targetsDB, 2)
 	targetsExp := []model.Target{
 		{
 			Model:   targetsDB[0].Model,
-			Name:    "101000100101",
-			NodeID:  s.node1.ID,
-			DiskID:  s.node1Disk.ID,
+			Name:    targetsDB[0].Name,
+			NodeID:  targetsDB[0].NodeID,
+			DiskID:  targetsDB[0].DiskID,
 			ChainID: chainExp.ID,
 		},
 		{
 			Model:   targetsDB[1].Model,
-			Name:    "101000200101",
+			Name:    "101000300101",
 			NodeID:  s.node2.ID,
 			DiskID:  s.node2Disk.ID,
 			ChainID: chainExp.ID,
